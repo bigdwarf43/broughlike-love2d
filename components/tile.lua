@@ -32,14 +32,7 @@ function Tile:doStuff()
     return
 end
 
-function Tile:isMoveAllowed(x, y)
-    for _, direction in ipairs(self.wall_directions) do
-        if direction.x ==x and direction.y == y then
-            return false
-        end
-    end
-    return true
-end
+
 
 -- ---WALL TILE
 -- Tile.Wall_tile = {}
@@ -79,7 +72,7 @@ Tile.Floor_tile.__index = Tile.Floor_tile
 setmetatable(Tile.Floor_tile, {__index = Tile})
 
 function Tile.Floor_tile:draw()
-    for _, direction in ipairs(self.wall_directions) do
+    for _, direction in ipairs(self.wall_directions:elements()) do
         if direction.x == 0 and direction.y ==-1 then
             -- upper wall
             love.graphics.line(self.x * TILE_SIZE, self.y * TILE_SIZE, (self.x * TILE_SIZE) + TILE_SIZE, (self.y* TILE_SIZE))
@@ -97,10 +90,19 @@ function Tile.Floor_tile:draw()
     end
 end
 
+function Tile.Floor_tile:isMoveAllowed(x, y)
+    for _, direction in ipairs(self.wall_directions:elements()) do
+        if direction.x ==x and direction.y == y then
+            return false
+        end
+    end
+    return true
+end
+
 function Tile.Floor_tile:new(x, y, wall_directions)
     local instance  = Tile:new(x, y, nil, true)
     setmetatable(instance, Tile.Floor_tile)
-    instance.wall_directions = wall_directions
+    instance.wall_directions = Set.new(wall_directions)
     return instance
 end
 function Tile.Floor_tile:doStuff()

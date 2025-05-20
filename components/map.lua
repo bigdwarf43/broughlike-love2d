@@ -17,7 +17,7 @@ end
 function Map:addWallInCorrespondingTile(tile, direction)
     print(direction.x, direction.y)
     local opposite_dir = {x = direction.x*-1, y=direction.y*-1}
-    table.insert(tile.wall_directions, opposite_dir)
+    tile.wall_directions:add(opposite_dir)
 end
 
 function Map:generateRandomMap(wallProbability)
@@ -47,9 +47,9 @@ function Map:generateRandomMap(wallProbability)
                 if math.random() < wallProbability then
                     local random_dir = directions[math.random(#directions)]
                     level_map[y][x] = Tile.Floor_tile:new(x, y, {random_dir})    -- Place a wallrandom_dir
-                    local abs_dir = {x = random_dir.x*-1, y=random_dir.y*-1}
-
-                    table.insert(level_map[random_dir.y+y][random_dir.x+x].wall_directions,  abs_dir)  -- Place a wallrandom_dir
+                    -- local abs_dir = {x = random_dir.x*-1, y=random_dir.y*-1}
+                    -- level_map[random_dir.y+y][random_dir.x+x].wall_directions:add(abs_dir)  
+                    -- table.insert(level_map[random_dir.y+y][random_dir.x+x].wall_directions,  abs_dir)  -- Place a wallrandom_dir
                     
                 end
             end
@@ -58,30 +58,37 @@ function Map:generateRandomMap(wallProbability)
         -- Add border walls (1) around the entire level_map
         for y = 1, self.height do
             level_map[y][1] = Tile.Floor_tile:new(1, y, {{x = 0, y = 1},{x = 0, y = -1},{x = 1, y = 0},{x = -1, y = 0}})      -- Left border
-            table.insert(level_map[y][1+1].wall_directions,  {x = -1, y = 0})  -- Place a wallrandom_dir
-            
+            -- table.insert(level_map[y][1+1].wall_directions,  {x = -1, y = 0})  -- Place a wallrandom_dir
+            -- level_map[y][1+1].wall_directions:add({x = -1, y = 0})
             
             level_map[y][self.width] = Tile.Floor_tile:new(self.width, y, {{x = 0, y = 1},{x = 0, y = -1},{x = 1, y = 0},{x = -1, y = 0}})    -- Right border
-            table.insert(level_map[y][self.width-1].wall_directions,  {x = 1, y = 0})  -- Place a wallrandom_dir
+            -- table.insert(level_map[y][self.width-1].wall_directions,  {x = 1, y = 0})  -- Place a wallrandom_dir
+            -- level_map[y][self.width-1].wall_directions:add({x = 1, y = 0})
             
         end
         
         for x = 1, self.width do
             level_map[1][x] = Tile.Floor_tile:new(x, 1, {{x = 0, y = 1},{x = 0, y = -1},{x = 1, y = 0},{x = -1, y = 0}})  -- Top border
-            table.insert(level_map[2][x].wall_directions,  {x = 0, y = -1})  -- Place a wallrandom_dir
+            -- table.insert(level_map[2][x].wall_directions,  {x = 0, y = -1})  -- Place a wallrandom_dir
+            -- level_map[2][x].wall_directions:add({x = 0, y = -1})
 
             
             level_map[self.height][x] = Tile.Floor_tile:new(x, self.height, {{x = 0, y = 1},{x = 0, y = -1},{x = 1, y = 0},{x = -1, y = 0}})   -- Bottom border
-            table.insert(level_map[self.height-1][x].wall_directions, {x = 0, y = 1})  -- Place a wallrandom_dir
+            -- table.insert(level_map[self.height-1][x].wall_directions, {x = 0, y = 1})  -- Place a wallrandom_dir
+            -- level_map[self.height-1][x].wall_directions:add({x = 0, y = 1})
+
         end
 
-        -- for y = 1, self.height do
-        --     for x = 1, self.width do
-        --         for idx, dir in ipairs(level_map[y][x].wall_directions) do
-        --             self:addWallInCorrespondingTile(level_map[y][x], dir)
-        --         end
-        --     end
-        -- end
+        for y = 1, self.height do
+            for x = 1, self.width do
+                for idx, dir in ipairs(level_map[y][x].wall_directions:elements()) do
+                    if self:inBounds(x+dir.x, y+dir.y) then
+                        local corresponding_tile = level_map[y+dir.y][x+dir.x]
+                        self:addWallInCorrespondingTile(corresponding_tile, dir)
+                    end
+                end
+            end
+        end
         
         return level_map
     end
@@ -145,16 +152,16 @@ function Map:removeExitBlocks(exit_x, exit_y)
     
     -- Exit is on the top row (row 1)
     if exit_x == 1 then
-        exit_direction.x = 1  -- Facing down
+        exit_direction.y = -1  -- Facing down
     -- Exit is on the bottom row
-    elseif exit_x == self.height then
+    elseif exit_x == self.width then
         exit_direction.x = -1  -- Facing up
     -- Exit is on the leftmost column (column 1)
     elseif exit_y == 1 then
-        exit_direction.y = 1  -- Facing right
+        exit_direction.x = 1  -- Facing right
     -- Exit is on the rightmost column
     elseif exit_y == self.height then
-        exit_direction.y = -1  -- Facing left
+        exit_direction.y = 1  -- Facing left
     end
     
     print("EXIT ON")
@@ -166,14 +173,25 @@ function Map:removeExitBlocks(exit_x, exit_y)
 
 
 
+
     local exit_corresponding_tile = self.level_map[exit_y+exit_direction.y][exit_x+exit_direction.x]
     
     for idx, dir in ipairs(exit_corresponding_tile.wall_directions) do
-        if dir.x == (exit_direction.x*-1) and dir.y == (exit_direction.y*-1) then
-            table.remove(exit_corresponding_tile.wall_directions, idx)
+        if dir.x == (exit_direction.x) and dir.y == (exit_direction.y) then
+            exit_corresponding_tile.wall_directions:remove({x=dir.x, y=dir.y})
             print("WALLS IN")
             print(exit_corresponding_tile.x, exit_corresponding_tile.y)
-            for _,line in ipairs(exit_corresponding_tile.wall_directions) do print(table.concat(line)) end
+            break
+        end
+    end
+
+    local exit_tile = self.level_map[exit_y][exit_x]
+
+    for idx, dir in ipairs(exit_tile.wall_directions) do
+        if dir.x == (exit_direction.x) and dir.y == (exit_direction.y) then
+            exit_tile.wall_directions:remove({x=dir.x, y=dir.y})
+            print("WALLS IN")
+            print(exit_tile.x, exit_tile.y)
             break
         end
     end
@@ -197,13 +215,19 @@ function Map:new(options)
     instance.level_map = instance:generateRandomMap(0.3)
 
     instance.level_map[exit_y][exit_x] = Tile.Exit_tile:new(exit_x, exit_y)
-    instance:removeExitBlocks(exit_x, exit_y)
+    -- instance:removeExitBlocks(exit_x, exit_y)
 
 
     -- Return the newly created instance
     return instance
 end
 
+function Map:inBounds(x, y)
+    if 0 < y and y <= self.height and 0 < x and x <= self.width then
+        return true
+    end
+    return false
+end
 
 
 function Map:TestMap(player_current_x, player_current_y, dir_x, dir_y)
@@ -219,7 +243,7 @@ function Map:TestMap(player_current_x, player_current_y, dir_x, dir_y)
         print("CURRENT COORDS")
         print(tile.x, tile.y)
         print("WALL DIRECTIONS")
-        for _, direction in ipairs(tile.wall_directions) do
+        for _, direction in ipairs(tile.wall_directions:elements()) do
             print(direction.x, direction.y)
         end
         print("MOVIN IN")
@@ -232,9 +256,7 @@ function Map:TestMap(player_current_x, player_current_y, dir_x, dir_y)
         -- end
 
         return tile:isMoveAllowed(dir_x, dir_y)
-        -- if tile.passable == false then
-        --     return false
-        -- end
+
     end
 
     return false
