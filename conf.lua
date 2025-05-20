@@ -1,0 +1,12 @@
+-- function love.conf(t)
+--     -- t.window.width = 640
+--     -- t.window.height = 960
+--     -- t.window.fullscreen = false
+--     -- t.window.usedpiscale = false
+--     -- t.window.resizable = false
+--     t.window.msaa = 0
+--     t.window.resizable = false
+--     t.window.fullscreen = true
+--     t.window.highdpi = true
+--     t.window.usedpiscale = false 
+-- end
