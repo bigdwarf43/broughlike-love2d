@@ -22,10 +22,10 @@ function Player:new(options)
     local instance ={}
     setmetatable(instance, self)
 
-    instance.grid_x=options.grid_x
-    instance.grid_y=options.grid_y
-    instance.act_x=options.act_x
-    instance.act_y=options.act_y
+    instance.grid_row=options.grid_row
+    instance.grid_col=options.grid_col
+    instance.act_x=options.grid_col * TILE_SIZE
+    instance.act_y=options.grid_row * TILE_SIZE
     instance.speed=options.speed
 
     return instance
@@ -42,19 +42,29 @@ function Player:HandleKeyPressed(mapObject, key)
         right = { dx =  1, dy =  0, act = "x" }
     }
 
+    local grid_directions = {
+        up    = { dx =  -1, dy = 0, act = "y" },
+        down  = { dx =  1, dy =  0, act = "y" },
+        left  = { dx = 0, dy =  -1, act = "x" },
+        right = { dx =  0, dy =  1, act = "x" }
+    }
+
     local dir = directions[key]
+    local grid_dir =  grid_directions[key]
     if not dir then return end  -- invalid key
 
-    local new_x = self.grid_x + dir.dx * TILE_SIZE
-    local new_y = self.grid_y + dir.dy * TILE_SIZE
 
-    if mapObject:TestMap(self.grid_x, self.grid_y, dir.dx, dir.dy) then
-        self.grid_x = new_x
-        self.grid_y = new_y
+    if mapObject:TestMap(self.grid_row, self.grid_col, grid_dir.dx, grid_dir.dy) then
+        self.grid_row = self.grid_row + grid_dir.dx
+        self.grid_col = self.grid_col + grid_dir.dy
+
         self.CanMove = false
-        local tile = mapObject.level_map[self.grid_y / TILE_SIZE][self.grid_x / TILE_SIZE]
+
+        -- fetch the grid tile and trigger its effect
+        local tile = mapObject.level_map[self.grid_row][self.grid_col]
         if tile and tile.doStuff then tile.doStuff() end
         Timer = love.timer.getTime() + self.MoveDelay
+
     else
         -- if movement was not valid add jerk to the player position
         self.act_x = self.act_x + (dir.dx * self.JERK_OFFSET)
@@ -94,8 +104,9 @@ function Player:MovePlayer(dt)
         self.CanMove = true
     end
 
-    self.act_y = COMMON_UTILS:Lerp(self.act_y,self.grid_y, dt * self.speed )
-    self.act_x = COMMON_UTILS:Lerp(self.act_x,self.grid_x, dt * self.speed )
+    local dest_x, dest_y = COMMON_UTILS:fetchScreenCoords(self.grid_row, self.grid_col)
+    self.act_y = COMMON_UTILS:Lerp(self.act_y,dest_y, dt * self.speed )
+    self.act_x = COMMON_UTILS:Lerp(self.act_x,dest_x, dt * self.speed )
 end
 
 

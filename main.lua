@@ -6,6 +6,7 @@ Push = require "lib.push"
 WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
 VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 540, 960
 TILE_SIZE = 32
+OFFSET = 1.2
 
 
 function love.load()
@@ -20,14 +21,14 @@ function love.load()
         
     math.randomseed(os.time()) -- seed the RNG
     MAP_OBJECT = Map:new{level=0}
-    local col, row = MAP_OBJECT:findRandomEmptyPosition()
+    local row, col = MAP_OBJECT:findRandomEmptyPosition()
     PLAYER_ENTITY = Player:new{
-        grid_x = row * TILE_SIZE,
-        grid_y = col * TILE_SIZE,
-        act_x = row * TILE_SIZE,
-        act_y = col * TILE_SIZE,
+        grid_row = row,
+        grid_col = col,
         speed = 10
     }
+    print("PLAYER INIT AT")
+    print(row, col)
 
     --FOR TOUCH CONTROLS
     TOUCH_BEGIN_X = nil
@@ -46,9 +47,9 @@ end
 function LoadNewMap()
     -- create a new Map object
     MAP_OBJECT = Map:new{level=0}
-    local col, row = MAP_OBJECT:findRandomEmptyPosition()
-    PLAYER_ENTITY.grid_x = row * TILE_SIZE
-    PLAYER_ENTITY.grid_y = col * TILE_SIZE
+    local row, col = MAP_OBJECT:findRandomEmptyPosition()
+    PLAYER_ENTITY.grid_row = row 
+    PLAYER_ENTITY.grid_col = col 
 end
 
 
@@ -85,7 +86,7 @@ function love.draw()
 
     Push:start()
         -- translate origin to approx middle
-        love.graphics.translate((VIRTUAL_WIDTH/2)-(TILE_SIZE*5), (VIRTUAL_HEIGHT/2)-(TILE_SIZE*6))
+        love.graphics.translate((VIRTUAL_WIDTH/2)-(TILE_SIZE*7), (VIRTUAL_HEIGHT/2)-(TILE_SIZE*6))
         love.graphics.print(tostring(WINDOW_WIDTH).."x"..tostring(WINDOW_HEIGHT))
         love.graphics.setLineWidth(1.5)
         -- draw the Map

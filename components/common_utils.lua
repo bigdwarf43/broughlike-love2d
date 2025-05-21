@@ -3,6 +3,12 @@ function COMMON_UTILS:Lerp(start, dest, t)
     return (1-t)*start + dest*t
 end
 
+function COMMON_UTILS:fetchScreenCoords(row, col)
+    local x_coord = col * TILE_SIZE * OFFSET
+    local y_coord =  row* TILE_SIZE * OFFSET
+
+    return x_coord, y_coord
+end
 
 function COMMON_UTILS:Astar(start, goal, graph)
 
