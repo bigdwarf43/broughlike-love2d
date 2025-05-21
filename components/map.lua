@@ -15,9 +15,11 @@ function Map:printMap()
 end
 
 function Map:addWallInCorrespondingTile(tile, direction)
-    print(direction.x, direction.y)
-    local opposite_dir = {x = direction.x*-1, y=direction.y*-1}
-    tile.wall_directions:add(opposite_dir)
+    if getmetatable(tile) ~= Tile.Exit_tile then
+        local opposite_dir = {x = direction.x*-1, y=direction.y*-1}
+        tile.wall_directions:add(opposite_dir)
+    end
+
 end
 
 function Map:generateRandomMap(wallProbability)
@@ -79,16 +81,28 @@ function Map:generateRandomMap(wallProbability)
 
         end
 
+        -- place one exit on the map
+        local exit_x, exit_y = self:getExitCoords()
+        level_map[exit_y][exit_x] = Tile.Exit_tile:new(exit_x, exit_y)
+
+
         for y = 1, self.height do
             for x = 1, self.width do
-                for idx, dir in ipairs(level_map[y][x].wall_directions:elements()) do
-                    if self:inBounds(x+dir.x, y+dir.y) then
-                        local corresponding_tile = level_map[y+dir.y][x+dir.x]
-                        self:addWallInCorrespondingTile(corresponding_tile, dir)
+
+                if getmetatable(level_map[y][x]) ~= Tile.Exit_tile then
+                    for idx, dir in ipairs(level_map[y][x].wall_directions:elements()) do
+                        if self:inBounds(x+dir.x, y+dir.y) then
+                            local corresponding_tile = level_map[y+dir.y][x+dir.x]
+                            self:addWallInCorrespondingTile(corresponding_tile, dir)
+                        end
                     end
                 end
+                
             end
         end
+
+        self:removeExitBlocks(exit_y,exit_x, level_map)
+
         
         return level_map
     end
@@ -146,56 +160,72 @@ function Map:neighbours(tile, level_map)
     return neighbour_list 
 end
 
-function Map:removeExitBlocks(exit_x, exit_y)
-    -- Determine which border the exit is on and find its facing direction
-    local exit_direction = {x = 0, y = 0}
+function Map:removeExitBlocks(exit_x, exit_y, level_map)
+    level_map = level_map or self.level_map
     
-    -- Exit is on the top row (row 1)
-    if exit_x == 1 then
-        exit_direction.y = -1  -- Facing down
-    -- Exit is on the bottom row
-    elseif exit_x == self.width then
-        exit_direction.x = -1  -- Facing up
-    -- Exit is on the leftmost column (column 1)
-    elseif exit_y == 1 then
-        exit_direction.x = 1  -- Facing right
-    -- Exit is on the rightmost column
-    elseif exit_y == self.height then
-        exit_direction.y = 1  -- Facing left
+    -- Remember: From getExitCoords, exit_y is the column (x) and exit_x is the row (y)
+    -- Let's rename these for clarity
+    local exit_row = exit_x
+    local exit_col = exit_y
+    
+    -- Determine which border the exit is on and its facing direction
+    local facing_direction = {x = 0, y = 0}
+    
+    -- Debug output
+    print("Exit position: row=" .. exit_row .. ", col=" .. exit_col)
+    print("Map dimensions: width=" .. self.width .. ", height=" .. self.height)
+    
+    -- Exit is on top row (row 1)
+    if exit_row == 1 then
+        facing_direction.y = 1  -- Facing down into the map
+    -- Exit is on bottom row
+    elseif exit_row == self.height then
+        facing_direction.y = -1  -- Facing up into the map
+    -- Exit is on leftmost column
+    elseif exit_col == 1 then
+        facing_direction.x = 1  -- Facing right into the map
+    -- Exit is on rightmost column
+    elseif exit_col == self.width then
+        facing_direction.x = -1  -- Facing left into the map
     end
     
-    print("EXIT ON")
-    print(exit_x, exit_y)
-    print("REMOVING WALL FROM")
-    print(exit_x+exit_direction.x, exit_y+exit_direction.y)
-    print("IN DIRECTION")
-    print(exit_direction.x, exit_direction.y)
-
-
-
-
-    local exit_corresponding_tile = self.level_map[exit_y+exit_direction.y][exit_x+exit_direction.x]
+    print("Exit facing direction: x=" .. facing_direction.x .. ", y=" .. facing_direction.y)
     
-    for idx, dir in ipairs(exit_corresponding_tile.wall_directions) do
-        if dir.x == (exit_direction.x) and dir.y == (exit_direction.y) then
-            exit_corresponding_tile.wall_directions:remove({x=dir.x, y=dir.y})
-            print("WALLS IN")
-            print(exit_corresponding_tile.x, exit_corresponding_tile.y)
-            break
-        end
+    -- Calculate the position of the tile in front of the exit
+    local front_row = exit_row + facing_direction.y
+    local front_col = exit_col + facing_direction.x
+    
+    print("Tile in front: row=" .. front_row .. ", col=" .. front_col)
+    
+    -- Safety check to make sure the front tile is within bounds
+    if front_row <= 0 or front_row > self.height or
+       front_col <= 0 or front_col > self.width then
+        print("WARNING: Tile in front of exit is out of bounds!")
+        return
     end
-
-    local exit_tile = self.level_map[exit_y][exit_x]
-
-    for idx, dir in ipairs(exit_tile.wall_directions) do
-        if dir.x == (exit_direction.x) and dir.y == (exit_direction.y) then
-            exit_tile.wall_directions:remove({x=dir.x, y=dir.y})
-            print("WALLS IN")
-            print(exit_tile.x, exit_tile.y)
-            break
-        end
+    
+    -- Get the tile in front of the exit
+    local front_tile = level_map[front_row][front_col]
+    
+    -- The wall to remove is in the opposite direction of facing_direction
+    local wall_to_remove = {x = -facing_direction.x, y = -facing_direction.y}
+    print("Wall to remove: x=" .. wall_to_remove.x .. ", y=" .. wall_to_remove.y)
+    
+    -- Remove the wall
+    front_tile.wall_directions:remove(wall_to_remove)
+    
+    -- Also make sure the exit tile itself doesn't have walls
+    -- (this is optional but might help ensure the exit is passable)
+    level_map[exit_row][exit_col].wall_directions = {}
+    
+    -- Update the map
+    level_map[front_row][front_col] = front_tile
+    
+    -- Debug output
+    print("Walls in front tile after removal:")
+    for _, dir in ipairs(front_tile.wall_directions:elements()) do
+        print("  x=" .. dir.x .. ", y=" .. dir.y)
     end
-
 end
 
 -- required: level
@@ -209,13 +239,7 @@ function Map:new(options)
     instance.width = 9
     instance.height = 9
 
-    -- place one exit on the map
-    local exit_x, exit_y = instance:getExitCoords()
-
     instance.level_map = instance:generateRandomMap(0.3)
-
-    instance.level_map[exit_y][exit_x] = Tile.Exit_tile:new(exit_x, exit_y)
-    -- instance:removeExitBlocks(exit_x, exit_y)
 
 
     -- Return the newly created instance
