@@ -19,13 +19,17 @@ function love.load()
 
         
     math.randomseed(os.time()) -- seed the RNG
+    -- Initialize map and player.
     MAP_OBJECT = Map:new{level=0}
-    local col, row = MAP_OBJECT:findRandomEmptyPosition()
+    -- MAP_OBJECT:findRandomEmptyPosition() returns (x_col_idx, y_row_idx).
+    -- So, map_x becomes column index, map_y becomes row index.
+    local map_x, map_y = MAP_OBJECT:findRandomEmptyPosition() 
+    -- Player:new expects options: grid_col, grid_row, act_x, act_y, speed.
     PLAYER_ENTITY = Player:new{
-        grid_x = row * TILE_SIZE,
-        grid_y = col * TILE_SIZE,
-        act_x = row * TILE_SIZE,
-        act_y = col * TILE_SIZE,
+        grid_col = map_x,
+        grid_row = map_y,
+        act_x = map_x * TILE_SIZE, -- Initial act_x should match target
+        act_y = map_y * TILE_SIZE, -- Initial act_y should match target
         speed = 10
     }
 
@@ -46,9 +50,17 @@ end
 function LoadNewMap()
     -- create a new Map object
     MAP_OBJECT = Map:new{level=0}
-    local col, row = MAP_OBJECT:findRandomEmptyPosition()
-    PLAYER_ENTITY.grid_x = row * TILE_SIZE
-    PLAYER_ENTITY.grid_y = col * TILE_SIZE
+    -- MAP_OBJECT:findRandomEmptyPosition() returns (x_col_idx, y_row_idx).
+    -- So, map_x is col_idx, map_y is row_idx.
+    local map_x, map_y = MAP_OBJECT:findRandomEmptyPosition()
+    -- Update player's grid and pixel positions.
+    PLAYER_ENTITY.grid_col = map_x
+    PLAYER_ENTITY.grid_row = map_y
+    PLAYER_ENTITY.target_pixel_x = map_x * TILE_SIZE
+    PLAYER_ENTITY.target_pixel_y = map_y * TILE_SIZE
+    -- Reset act_x and act_y to prevent visual glitch from old position
+    PLAYER_ENTITY.act_x = map_x * TILE_SIZE
+    PLAYER_ENTITY.act_y = map_y * TILE_SIZE
 end
 
 

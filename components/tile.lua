@@ -4,11 +4,11 @@ require "components.utils.set"
 Tile = {}
 Tile.__index = Tile
 
---- creates a new tile
----@x : int
----@y : int
----@sprite : int
----@passable : boolean
+--- Creates a new tile.
+--- @x number Grid column index (x_col_idx).
+--- @y number Grid row index (y_row_idx).
+--- @sprite (any) Sprite identifier (not currently used for basic tiles).
+--- @passable boolean Whether the tile is passable.
 function Tile:new(x, y, sprite, passable)
 
     local instance ={}
@@ -71,6 +71,7 @@ Tile.Floor_tile = {}
 Tile.Floor_tile.__index = Tile.Floor_tile
 setmetatable(Tile.Floor_tile, {__index = Tile})
 
+-- Creates a new floor tile. x and y are grid_col_idx and grid_row_idx.
 function Tile.Floor_tile:draw()
     for _, direction in ipairs(self.wall_directions:elements()) do
         if direction.x == 0 and direction.y ==-1 then
@@ -99,6 +100,7 @@ function Tile.Floor_tile:isMoveAllowed(x, y)
     return true
 end
 
+-- Creates a new floor tile. x and y are grid_col_idx and grid_row_idx.
 function Tile.Floor_tile:new(x, y, wall_directions)
     local instance  = Tile:new(x, y, nil, true)
     setmetatable(instance, Tile.Floor_tile)
@@ -120,6 +122,7 @@ function Tile.Exit_tile:draw()
     love.graphics.setColor(1,1,1,1)
 
 end
+-- Creates a new exit tile. x and y are grid_col_idx and grid_row_idx.
 function Tile.Exit_tile:new(x, y)
     local instance  = Tile:new(x, y, nil, true)
     setmetatable(instance, Tile.Exit_tile)
