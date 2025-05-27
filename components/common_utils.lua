@@ -1,11 +1,14 @@
+Globals = require "globals"
+
 COMMON_UTILS ={}
+
 function COMMON_UTILS:Lerp(start, dest, t)
     return (1-t)*start + dest*t
 end
 
 function COMMON_UTILS:fetchScreenCoords(row, col)
-    local x_coord = col * TILE_SIZE * OFFSET
-    local y_coord =  row* TILE_SIZE * OFFSET
+    local x_coord = (col-1) * Globals.TILE_SIZE * Globals.TILE_OFFSET
+    local y_coord =  (row-1)* Globals.TILE_SIZE * Globals.TILE_OFFSET
 
     return x_coord, y_coord
 end

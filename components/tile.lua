@@ -1,5 +1,6 @@
 require "components.utils.set"
 require "components.common_utils"
+Events = require "components.events"
 
 -- base class
 Tile = {}
@@ -58,12 +59,6 @@ function Tile:isMoveAllowed(row, col)
 
     return not self.wall_directions:contains(direction)
 
-    -- for _, wall in ipairs(self.wall_directions:elements()) do
-    --     if direction==wall then
-    --         return false
-    --     end
-    -- end
-    -- return true
 end
 
 
@@ -75,14 +70,14 @@ setmetatable(Tile.Border_tile, {__index = Tile})
 
 function Tile.Border_tile:draw()
     local x_coord, y_coord = COMMON_UTILS:fetchScreenCoords(self.row, self.col)
-    love.graphics.rectangle("line", x_coord, y_coord, TILE_SIZE, TILE_SIZE)
-    love.graphics.print(tostring(self.row)..","..tostring(self.col), x_coord, y_coord)
+    love.graphics.rectangle("line", x_coord, y_coord, Globals.TILE_SIZE, Globals.TILE_SIZE)
+    -- love.graphics.print(tostring(self.row)..","..tostring(self.col), x_coord, y_coord)
 end
 
 function Tile.Border_tile:new(row, col) 
     local instance  = Tile:new(row, col, nil, false)
     setmetatable(instance, Tile.Border_tile)
-    instance.wall_directions = Set.new({})
+    instance.wall_directions = Set.new({"up", "down", "left", "right"})
     return instance
 end
 
@@ -93,24 +88,26 @@ Tile.Floor_tile.__index = Tile.Floor_tile
 setmetatable(Tile.Floor_tile, {__index = Tile})
 
 
-function Tile.Floor_tile:draw()
+function Tile.Floor_tile:draw(level_map)
+    -- the function assumes that the walls are being drawn in a row wise manner
+    -- it skips the wall drawing if it is already drawn in a previous tile
 
     local x_coord, y_coord = COMMON_UTILS:fetchScreenCoords(self.row, self.col)
-    love.graphics.print(tostring(self.row)..","..tostring(self.col), x_coord, y_coord)
+    -- love.graphics.print(tostring(self.row)..","..tostring(self.col), x_coord, y_coord)
 
     for _, direction in ipairs(self.wall_directions:elements()) do
-        if direction=="up" then
+        if direction=="up" and not level_map[self.row-1][self.col].wall_directions:contains("down") then
             -- upper wall
-            love.graphics.line(x_coord, y_coord, x_coord + TILE_SIZE, y_coord)
-        elseif direction=="down" then
+            love.graphics.line(x_coord, y_coord, x_coord + Globals.TILE_SIZE, y_coord)
+        elseif direction=="down" and getmetatable(level_map[self.row+1][self.col])~=Tile.Border_tile then
             -- lower wall
-            love.graphics.line(x_coord, y_coord + TILE_SIZE, x_coord + TILE_SIZE, y_coord+ TILE_SIZE)
-        elseif direction=="left" then
+            love.graphics.line(x_coord, y_coord + Globals.TILE_SIZE, x_coord + Globals.TILE_SIZE, y_coord+ Globals.TILE_SIZE)
+        elseif direction=="left" and not level_map[self.row][self.col-1].wall_directions:contains("right") then
             -- left wall
-            love.graphics.line(x_coord, y_coord, x_coord  , y_coord + TILE_SIZE)
-        elseif direction=="right" then
+            love.graphics.line(x_coord, y_coord, x_coord  , y_coord + Globals.TILE_SIZE)
+        elseif direction=="right" and getmetatable(level_map[self.row][self.col+1])~=Tile.Border_tile then
             -- right wall
-            love.graphics.line(x_coord+ TILE_SIZE, y_coord, x_coord+TILE_SIZE, y_coord+TILE_SIZE)
+            love.graphics.line(x_coord+ Globals.TILE_SIZE, y_coord, x_coord+Globals.TILE_SIZE, y_coord+Globals.TILE_SIZE)
         end
 
     end
@@ -134,19 +131,25 @@ Tile.Exit_tile.__index = Tile.Exit_tile
 setmetatable(Tile.Exit_tile, {__index = Tile})
 
 function Tile.Exit_tile:draw()
+    local xcoords, ycoords = COMMON_UTILS:fetchScreenCoords(self.row, self.col)
     love.graphics.setColor(0,1,0,1)
-    love.graphics.rectangle("fill", self.row * TILE_SIZE, self.col * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    love.graphics.rectangle("fill", xcoords, ycoords, Globals.TILE_SIZE, Globals.TILE_SIZE)
     love.graphics.setColor(1,1,1,1)
-
 end
-function Tile.Exit_tile:new(row, col)
+
+function Tile.Exit_tile:new(row, col, room_row, room_col, exit_dir)
     local instance  = Tile:new(row, col, nil, true)
     setmetatable(instance, Tile.Exit_tile)
-    instance.wall_directions = {}
+    instance.wall_directions = Set.new({})
+    instance.room_row = room_row
+    instance.room_col = room_col
+    instance.exit_dir = exit_dir
+
     return instance
 end
 function Tile.Exit_tile:doStuff()
-    LoadNewMap()
+    Events.on_player_exit:emit(self.room_row, self.room_col, self.exit_dir)
+    -- LoadNewMap()
 end
 
 return Tile

@@ -1,16 +1,16 @@
 
 Map = require "components.map"
+World_map = require "components.world_map"
 Player = require "components.player"
 Push = require "lib.push"
 
 WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
-VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 540, 960
-TILE_SIZE = 32
-OFFSET = 1.2
 
+VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 540, 960
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
+
 
     -- Resolution config
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -20,15 +20,16 @@ function love.load()
 
         
     math.randomseed(os.time()) -- seed the RNG
-    MAP_OBJECT = Map:new{level=0}
+
+    World_map_obj = World_map:new()
+    MAP_OBJECT = World_map_obj:fetchInitMap()
     local row, col = MAP_OBJECT:findRandomEmptyPosition()
+
     PLAYER_ENTITY = Player:new{
         grid_row = row,
         grid_col = col,
         speed = 10
     }
-    print("PLAYER INIT AT")
-    print(row, col)
 
     --FOR TOUCH CONTROLS
     TOUCH_BEGIN_X = nil
@@ -44,12 +45,14 @@ function love.resize(w, h)
     Push:resize(w,h)
 end
 
-function LoadNewMap()
+function LoadNewMap(map_room, player_row, player_col)
     -- create a new Map object
-    MAP_OBJECT = Map:new{level=0}
-    local row, col = MAP_OBJECT:findRandomEmptyPosition()
-    PLAYER_ENTITY.grid_row = row 
-    PLAYER_ENTITY.grid_col = col 
+    MAP_OBJECT = map_room
+
+    PLAYER_ENTITY.grid_row = player_row
+    PLAYER_ENTITY.grid_col = player_col
+    PLAYER_ENTITY:MovePlayer(0, true)
+
 end
 
 
@@ -83,19 +86,57 @@ function love.update(dt)
 end
 
 function love.draw()
-
     Push:start()
-        -- translate origin to approx middle
-        love.graphics.translate((VIRTUAL_WIDTH/2)-(TILE_SIZE*7), (VIRTUAL_HEIGHT/2)-(TILE_SIZE*6))
-        love.graphics.print(tostring(WINDOW_WIDTH).."x"..tostring(WINDOW_HEIGHT))
-        love.graphics.setLineWidth(1.5)
-        -- draw the Map
-        MAP_OBJECT:draw()
-        -- draw the player
-        PLAYER_ENTITY:draw()
 
-        -- return the origin to 0,0
-        love.graphics.origin()
+    --------------------------
+    -- Draw Game World (centered)
+    --------------------------
+    love.graphics.push()
+
+    local game_map_x = (VIRTUAL_WIDTH / 2) - (Globals.TILE_SIZE * 7)
+    local game_map_y = (VIRTUAL_HEIGHT / 2) - (Globals.TILE_SIZE * 6)
+
+    love.graphics.translate(
+        game_map_x,
+        game_map_y
+    )
+    MAP_OBJECT:draw()
+    PLAYER_ENTITY:draw()
+
+    love.graphics.pop() -- back to 0,0 screen coords
+
+    --------------------------
+    -- Draw Minimap in screen space (top center)
+    --------------------------
+
+    -- Define minimap tile size and spacing explicitly
+    local minimapTileSize = Globals.TILE_SIZE -- Or a scaled down version
+    local tileSpacing = (Globals.TILE_SIZE * Globals.TILE_OFFSET) - minimapTileSize -- Or just Globals.TILE_OFFSET if it represents the gap directly
+
+    -- Corrected minimapWidth and minimapHeight
+    local minimapWidth = (Globals.MAP_COL * minimapTileSize) + (math.max(0, Globals.MAP_COL - 1) * tileSpacing)
+
+    local minimapX = game_map_x
+    local minimapY = 0
+    local minimapBorderHeight = game_map_y - minimapY
+
+    -- Add a small buffer if you want some space between minimap and game map
+    local buffer_space = 5
+    minimapBorderHeight = minimapBorderHeight - buffer_space
+
+    -- Ensure minimapBorderHeight is not negative
+    minimapBorderHeight = math.max(0, minimapBorderHeight)
+
+    -- Minimap border
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.rectangle("line", minimapX, minimapY, minimapWidth, minimapBorderHeight)
+
+    -- Draw actual minimap tiles inside that border
+    love.graphics.push()
+    love.graphics.translate(minimapX, minimapY)
+    World_map_obj:drawMinimap(minimapTileSize, tileSpacing)
+    love.graphics.pop()
+
     Push:finish()
-
 end
