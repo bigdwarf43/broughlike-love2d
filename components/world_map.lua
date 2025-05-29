@@ -52,6 +52,8 @@ function World_map:GenerateWorld()
                 room_world_row = row,
                 room_world_col = col
             }
+            map_obj:GenerateMonsters()
+
             Globals.WORLD_ARRAY[row][col] = map_obj
         end
     end
@@ -69,6 +71,8 @@ function World_map:fetchMapFromExitDir(room_row, room_col, exit_dir)
     }
     local grid_dir = grid_directions[exit_dir]
     local map_room = Globals.WORLD_ARRAY[room_row + grid_dir.row][room_col + grid_dir.col]
+    map_room.revealed = true
+
     Globals.CURRENT_ROW = room_row + grid_dir.row
     Globals.CURRENT_COL = room_col + grid_dir.col
 
@@ -89,12 +93,14 @@ function World_map:fetchInitMap()
 
     Globals.CURRENT_ROW = row
     Globals.CURRENT_COL = col
+
+    map_obj.revealed = true
     return map_obj
 end
 
 function World_map:drawMinimap()
-    local cellSize = 10
-    local cellSpacing = 10
+    local cellSize = 20
+    local cellSpacing = 15
     local tileStep = cellSize + cellSpacing
 
     -- Draw border
@@ -114,8 +120,28 @@ function World_map:drawMinimap()
             else
                 love.graphics.setColor(0.5, 0.5, 0.5, 1)  -- Gray for other rooms
             end
+            
+            local map_room = Globals.WORLD_ARRAY[row][col]
 
-            love.graphics.rectangle("fill", x, y, cellSize, cellSize)
+            
+            if map_room.revealed then
+                
+                -- draw the room on the map
+                love.graphics.rectangle("fill", x, y, cellSize, cellSize)
+                -- Calculate the center of the current room
+                local roomCenterX = x + cellSize / 2
+                local roomCenterY = y + cellSize / 2
+
+                -- draw its paths
+                for _, dir in ipairs(map_room.exit_dirs) do
+                    local loc = Globals.GRID_DIRECTIONS_MAP[dir]
+                    local endX = roomCenterX + loc.col * cellSize
+                    local endY = roomCenterY + loc.row * cellSize
+                    love.graphics.line(roomCenterX, roomCenterY, endX, endY)
+
+                end
+
+            end
         end
     end
 

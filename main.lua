@@ -3,9 +3,12 @@ Map = require "components.map"
 World_map = require "components.world_map"
 Player = require "components.player"
 Push = require "lib.push"
+Events = require "components.events"
+
+--temp
+Tank_enemy =  require "components.entities.tank_enemy"
 
 WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
-
 VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 540, 960
 
 function love.load()
@@ -24,11 +27,10 @@ function love.load()
     World_map_obj = World_map:new()
     MAP_OBJECT = World_map_obj:fetchInitMap()
     local row, col = MAP_OBJECT:findRandomEmptyPosition()
-
     PLAYER_ENTITY = Player:new{
         grid_row = row,
         grid_col = col,
-        speed = 10
+        speed = 30
     }
 
     --FOR TOUCH CONTROLS
@@ -39,6 +41,10 @@ function love.load()
     DOING_TOUCH = false
     SWIPE_THRESHOLD = 30 -- swipe threshold in pixels
 
+
+    -- -- temp
+    -- Tank_enemy_obj = Tank_enemy:new() 
+    -- Tank_enemy_obj:update()
 end
 
 function love.resize(w, h)
@@ -80,9 +86,22 @@ function love.keypressed(key)
     end
 end
 
+-- every tick is a player move
+Events.tick:connect(function()
+    print("MOVING ENEMIES")
+    for _, monster in ipairs(MAP_OBJECT.monsters_arr) do
+        monster:MoveEntity(MAP_OBJECT)
+    end
+end)
+
+
 
 function love.update(dt)
     PLAYER_ENTITY:MovePlayer(dt)
+    -- update all of the monsters
+    for _, monster in ipairs(MAP_OBJECT.monsters_arr) do
+        monster:update(dt)
+    end
 end
 
 function love.draw()
@@ -102,6 +121,11 @@ function love.draw()
     )
     MAP_OBJECT:draw()
     PLAYER_ENTITY:draw()
+
+    -- draw all of the monsters
+    for _, monster in ipairs(MAP_OBJECT.monsters_arr) do
+        monster:draw()
+    end
 
     love.graphics.pop() -- back to 0,0 screen coords
 

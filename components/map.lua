@@ -1,5 +1,13 @@
-Tile = require "components.tile"
+-- = require "components.tile"
+Border_tile = require "components.tiles.border_tile"
+Floor_tile = require "components.tiles.floor_tile"
+Exit_tile = require "components.tiles.exit_tile"
+
+
 Globals = require "globals"
+
+--enemies
+Tank_enemy = require "components.entities.tank_enemy"
 
 Map ={}
 Map.__index = Map
@@ -14,6 +22,34 @@ function Map:printMap()
         print(table.concat(tmp, " "))
     end
 end
+
+-- required: level
+function Map:new(options)
+
+    local instance = {}
+    setmetatable(instance, Map)
+
+    -- Initialize the instance with the provided level
+    instance.level = options.level
+    instance.width = Globals.MAP_COL
+    instance.height = Globals.MAP_ROW
+    instance.exit_dirs = options.exit_dirs
+    instance.room_world_row = options.room_world_row -- coords of room on world map
+    instance.room_world_col = options.room_world_col -- coords of room on world map
+
+    instance.level_map = instance:generateRandomMap(0.5)
+    instance.revealed = false -- whether the room is explored, should it be shown on minimap
+
+    instance.monsters_arr = {}
+    instance.num_of_enemies = 2
+
+
+    print("INITIATED MAP")
+    print(instance.level, table.concat(instance.exit_dirs, ", "))
+    -- Return the newly created instance
+    return instance
+end
+
 
 function Map:addWallInCorrespondingTile(tile, direction)
     local opposite_dir ={
@@ -41,7 +77,7 @@ function Map:generateRandomMap(wallProbability)
         for row = 1, self.height do
             level_map[row] = {}
             for col = 1, self.width do
-                level_map[row][col] = Tile.Floor_tile:new(row,col,{})
+                level_map[row][col] = Floor_tile:new(row,col,{})
             end
         end
 
@@ -59,14 +95,14 @@ function Map:generateRandomMap(wallProbability)
 
         -- Add border walls (1) around the entire level_map
         for row = 1, self.height do
-            level_map[row][1] = Tile.Border_tile:new(row, 1)
-            level_map[row][self.width] = Tile.Border_tile:new(row, self.width)
+            level_map[row][1] = Border_tile:new(row, 1)
+            level_map[row][self.width] = Border_tile:new(row, self.width)
 
         end
         
         for col = 1, self.width do
-            level_map[1][col] = Tile.Border_tile:new(1, col)
-            level_map[self.height][col] = Tile.Border_tile:new(self.height, col)
+            level_map[1][col] = Border_tile:new(1, col)
+            level_map[self.height][col] = Border_tile:new(self.height, col)
 
             
         end
@@ -76,7 +112,7 @@ function Map:generateRandomMap(wallProbability)
         print(table.concat(self.exit_dirs, ", "))
         for _, exit in ipairs(self.exit_dirs) do
             local exit_row, exit_col = self:getExitCoords(exit)
-            level_map[exit_row][exit_col] = Tile.Exit_tile:new(exit_row, exit_col, self.room_world_row, self.room_world_col, exit)
+            level_map[exit_row][exit_col] = Exit_tile:new(exit_row, exit_col, self.room_world_row, self.room_world_col, exit)
         end
 
 
@@ -89,13 +125,13 @@ function Map:generateRandomMap(wallProbability)
 
         for row = 1, self.height do
             for col = 1, self.width do
-                if getmetatable(level_map[row][col]) ~= Tile.Exit_tile or Tile.Border_tile then
+                if getmetatable(level_map[row][col]) ~= Exit_tile or Border_tile then
                     for idx, dir in ipairs(level_map[row][col].wall_directions:elements()) do
                         local direction_obj =grid_directions[dir]
                         
                         if self:inBounds(row+direction_obj.row, col+direction_obj.col) then
                             local corresponding_tile = level_map[row+direction_obj.row][col+direction_obj.col]
-                            if getmetatable(corresponding_tile) ~= Tile.Exit_tile then
+                            if getmetatable(corresponding_tile) ~= Exit_tile then
                                 self:addWallInCorrespondingTile(corresponding_tile, dir)
                             else
                                 -- if the corresponding tile is exit then do not block it
@@ -126,7 +162,8 @@ function Map:findRandomEmptyPosition(level_map)
     local zeroPositions = {}
     for row = 2, #level_map do
         for col = 2, #level_map[row] do
-            if level_map[row][col].passable == true then
+            local tile = level_map[row][col] 
+            if tile.passable == true and tile.entity==nil and getmetatable(tile)~=Exit_tile then
                 table.insert(zeroPositions, {row = row, col = col})
             end
         end
@@ -150,28 +187,6 @@ function Map:getExitCoords(exit_dir)
 end
 
 
--- required: level
-function Map:new(options)
-
-    local instance = {}
-    setmetatable(instance, Map)
-
-    -- Initialize the instance with the provided level
-    instance.level = options.level
-    instance.width = Globals.MAP_COL
-    instance.height = Globals.MAP_ROW
-    instance.exit_dirs = options.exit_dirs
-    instance.room_world_row = options.room_world_row -- coords of room on world map
-    instance.room_world_col = options.room_world_col -- coords of room on world map
-
-    instance.level_map = instance:generateRandomMap(0.5)
-
-    print("INITIATED MAP")
-    print(instance.level, table.concat(instance.exit_dirs, ", "))
-    -- Return the newly created instance
-    return instance
-end
-
 function Map:inBounds(row, col)
     -- 1 is filled with border and also width column and height row
     if 0 < row and row <= self.height and 0 < col and col <= self.width then
@@ -181,6 +196,8 @@ function Map:inBounds(row, col)
 end
 
 function Map:fetchPLayerPositionFromExit(exit_dir)
+    -- fetches position where the player should be placed depending upon the direction of the exit 
+    -- that the player took in the last room
     local exit_arr = {
         left =  { row = math.floor(self.width / 2) + 1, col = self.height-1 }  ,                               -- left border
         up = { row = self.height-1, col = math.floor(self.height / 2) + 1 },                                -- upper border
@@ -202,6 +219,19 @@ function Map:TestMap(player_current_grid_x, player_current_grid_y, dir_row, dir_
     end
 
     return false
+end
+
+
+function Map:FetchTile(row, col)
+    return self.level_map[row][col]
+end
+
+function Map:GenerateMonsters()
+    for _ = 1, self.num_of_enemies do
+        local row, col = self:findRandomEmptyPosition()
+        local enemy = Tank_enemy:new(row, col)
+        table.insert(self.monsters_arr, enemy)
+    end
 end
 
 function Map:draw()

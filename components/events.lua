@@ -4,5 +4,7 @@ local Signal = require "components.utils.signal"
 local Events = {}
 
 Events.on_player_exit = Signal:new()
+Events.tick = Signal:new()
+
 
 return Events

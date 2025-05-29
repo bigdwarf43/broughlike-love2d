@@ -1,5 +1,7 @@
 COMMON_UTILS = require "components.common_utils"
 Globals = require "globals"
+Entity = require "components.entities.entity"
+Tank_enemy = require "components.entities.tank_enemy"
 
 Player = {
     CanMove = true,
@@ -12,21 +14,28 @@ Player = {
     DOING_TOUCH = false,
     SWIPE_THRESHOLD = 30, -- swipe threshold in pixels
 
-    JERK_OFFSET = 15 -- offset by which the player is moved on an invalid move
+    JERK_OFFSET = 15 -- offset by which the Entity.player is moved on an invalid move
+
 }
-Player.__index = Player 
+setmetatable(Player, {__index = Entity})
+
 
 
 --[[required: grid_x, grid_y, act_x, act_y, speed]]
 function Player:new(options)
     local instance ={}
-    setmetatable(instance, Player)
+    setmetatable(instance, {__index = Player})
 
     instance.grid_row=options.grid_row
     instance.grid_col=options.grid_col
     instance.act_x=options.grid_col * Globals.TILE_SIZE
     instance.act_y=options.grid_row * Globals.TILE_SIZE
     instance.speed=options.speed
+
+    instance.CanMove = true
+    instance.MoveDelay = 0.1
+
+
 
     return instance
 end
@@ -55,15 +64,35 @@ function Player:HandleKeyPressed(mapObject, key)
 
 
     if mapObject:TestMap(self.grid_row, self.grid_col, grid_dir.dx, grid_dir.dy) then
-        self.grid_row = self.grid_row + grid_dir.dx
-        self.grid_col = self.grid_col + grid_dir.dy
 
-        self.CanMove = false
-
-        -- fetch the grid tile and trigger its effect
-        local tile = mapObject.level_map[self.grid_row][self.grid_col]
-        if tile and tile.doStuff then tile:doStuff() end
-        Timer = love.timer.getTime() + self.MoveDelay
+        local old_tile = mapObject:FetchTile(self.grid_row, self.grid_col)
+        local new_tile = mapObject:FetchTile(self.grid_row + grid_dir.dx, self.grid_col + grid_dir.dy)
+        
+        if not new_tile.entity then
+            old_tile.entity = nil
+            new_tile.entity = self
+            self.tile = new_tile
+    
+    
+            self.grid_row = self.grid_row + grid_dir.dx
+            self.grid_col = self.grid_col + grid_dir.dy
+    
+            self.CanMove = false
+    
+            -- fetch the grid tile and trigger its effect
+            local tile = mapObject.level_map[self.grid_row][self.grid_col]
+            if tile and tile.doStuff then tile:stepped_on(self) end
+    
+            
+    
+            -- add delay to the movement
+            Timer = love.timer.getTime() + self.MoveDelay
+            
+            -- emit tick signal 
+            Events.tick:emit()
+        elseif getmetatable(new_tile.entity)==Tank_enemy then
+            print("PlAYER ATTACK ENEMY")
+        end
 
     else
         -- if movement was not valid add jerk to the player position
@@ -114,9 +143,7 @@ function Player:MovePlayer(dt, without_lerp)
     else
         self.act_y = dest_y
         self.act_x = dest_x
-
     end
-    
 
 
 end
