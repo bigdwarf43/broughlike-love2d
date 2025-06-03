@@ -48,10 +48,6 @@ function Tile:isMoveAllowed(row, col)
         direction= "right"
     end
 
-    for _, val in ipairs(self.wall_directions:elements()) do
-        print(val)
-    end
-
     return not self.wall_directions:contains(direction)
 
 end

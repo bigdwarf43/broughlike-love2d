@@ -77,11 +77,14 @@ function Entity:update(dt)
     self.act_y = COMMON_UTILS:Lerp(self.act_y,dest_y, dt * self.speed )
     self.act_x = COMMON_UTILS:Lerp(self.act_x,dest_x, dt * self.speed )
 end
-
 function Entity:draw()
-    love.graphics.setColor(1, 0, 0, 1)
-    love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
-    love.graphics.setColor(1, 1, 1, 1)
+    -- love.graphics.setColor(1, 0, 0, 1)
+    -- love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
+    -- love.graphics.setColor(1, 1, 1, 1)
+
+    love.graphics.draw(Globals.TILE_SHEET.tilesetImage, Globals.TILE_SHEET:fetch_quad(460), self.act_x, self.act_y, 0, Globals.TILE_SCALE_X, Globals.TILE_SCALE_Y)
+
 end
+
 
 return Entity

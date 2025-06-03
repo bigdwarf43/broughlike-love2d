@@ -1,5 +1,6 @@
 Entity = require "components.entities.entity"
 COMMON_UTILS = require "components.common_utils"
+Globals = require "globals"
 Tank_enemy = {}
 
 
@@ -54,6 +55,14 @@ function Tank_enemy:MoveEntity(mapObject)
     --     self.act_x = self.act_x + (dir.dx * self.JERK_OFFSET)
     --     self.act_y = self.act_y + (dir.dy * self.JERK_OFFSET)
     -- end
+end
+
+function Tank_enemy:draw()
+    -- love.graphics.setColor(1, 0, 0, 1)
+    -- love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
+    -- love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(Globals.TILE_SHEET.tilesetImage, Globals.TILE_SHEET:fetch_quad(460), self.act_x, self.act_y)
+
 end
 
 return Tank_enemy

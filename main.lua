@@ -9,15 +9,14 @@ Events = require "components.events"
 Tank_enemy =  require "components.entities.tank_enemy"
 
 WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
-VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 540, 960
+VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 240, 426
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
-
     -- Resolution config
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT,
-        { resizable = false, fullscreen = true, highdpi = true, usedpiscale = false })
+        { resizable = false, fullscreen = false, highdpi = true, usedpiscale = false })
     Push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT,
         { fullscreen = false, vsync = true, resizable = true, usedpiscale = false, upscale = "pixel-perfect", canvas = true, highdpi = true })
 
@@ -107,9 +106,9 @@ end
 function love.draw()
     Push:start()
 
-    --------------------------
+    -- ------------------------
     -- Draw Game World (centered)
-    --------------------------
+    -- ------------------------
     love.graphics.push()
 
     local game_map_x = (VIRTUAL_WIDTH / 2) - (Globals.TILE_SIZE * 7)
@@ -157,10 +156,14 @@ function love.draw()
     love.graphics.rectangle("line", minimapX, minimapY, minimapWidth, minimapBorderHeight)
 
     -- Draw actual minimap tiles inside that border
+
     love.graphics.push()
+
     love.graphics.translate(minimapX, minimapY)
     World_map_obj:drawMinimap(minimapTileSize, tileSpacing)
     love.graphics.pop()
+    
+    love.graphics.rectangle("line", 0 , 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 
     Push:finish()
 end

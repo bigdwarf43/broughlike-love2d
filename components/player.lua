@@ -14,7 +14,7 @@ Player = {
     DOING_TOUCH = false,
     SWIPE_THRESHOLD = 30, -- swipe threshold in pixels
 
-    JERK_OFFSET = 15 -- offset by which the Entity.player is moved on an invalid move
+    JERK_OFFSET = 5 -- offset by which the Entity.player is moved on an invalid move
 
 }
 setmetatable(Player, {__index = Entity})
@@ -70,8 +70,11 @@ function Player:HandleKeyPressed(mapObject, key)
         
         if not new_tile.entity then
             old_tile.entity = nil
-            new_tile.entity = self
-            self.tile = new_tile
+            if getmetatable(new_tile)~=Exit_tile then
+                new_tile.entity = self
+                self.tile = new_tile
+            end 
+            
     
     
             self.grid_row = self.grid_row + grid_dir.dx
@@ -150,7 +153,11 @@ end
 
 
 function Player:draw()
-    love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
+    -- love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
+    love.graphics.draw(Globals.TILE_SHEET.tilesetImage, Globals.TILE_SHEET:fetch_quad(25), 
+    self.act_x, 
+    self.act_y, 0, Globals.TILE_SCALE_X, Globals.TILE_SCALE_Y)
+    -- love.graphics.draw()
 end
 
 return Player

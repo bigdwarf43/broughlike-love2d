@@ -99,8 +99,8 @@ function World_map:fetchInitMap()
 end
 
 function World_map:drawMinimap()
-    local cellSize = 20
-    local cellSpacing = 15
+    local cellSize = 10
+    local cellSpacing = 10
     local tileStep = cellSize + cellSpacing
 
     -- Draw border
