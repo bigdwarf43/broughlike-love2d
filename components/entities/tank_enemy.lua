@@ -31,6 +31,9 @@ function Tank_enemy:handleTick(mapObject)
         return
     end
 
+    -- NEED TO IMPLEMET A STAR HERE, THE ENEMIES ARE STUCK 
+    -- WHEN THE PLAYER IS BEHIND A WALL
+    
     local directions = {"up","down","left","right"}
     -- loop all the tiles in a radius
     in_radius_tiles = mapObject:fetchRadius(self.tile.row, self.tile.col, 2)
