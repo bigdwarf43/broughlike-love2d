@@ -23,13 +23,15 @@ function Entity:new(grid_row, grid_col)
     instance.act_x=grid_col * Globals.TILE_SIZE
     instance.act_y=grid_row * Globals.TILE_SIZE
 
+    instance.hp = 5
+
     instance.tile=nil
 
 
     return instance
 end
 
-function Entity:MoveEntity(mapObject)
+function Entity:HandleTick(mapObject)
     local directions = {"up","down","left","right"}
 
     -- Step 1: Pick a random index from the list of keys
@@ -53,8 +55,8 @@ function Entity:MoveEntity(mapObject)
 
             self.grid_row = self.grid_row + grid_dir.row
             self.grid_col = self.grid_col + grid_dir.col
-        -- elseif getmetatable(new_tile.entity)==Player then
-        --     print("ENEMY ATTACK PLAYER")
+        elseif getmetatable(new_tile.entity)==Player then
+            print("ENEMY ATTACK PLAYER")
         end
 
     end
@@ -71,6 +73,10 @@ function Entity:MoveEntity(mapObject)
     -- end
 end
 
+function Entity:takeDamage(damage)
+    self.hp =  self.hp - 1
+    print("took damage")
+end
 
 function Entity:update(dt)
     local dest_x, dest_y = COMMON_UTILS:fetchScreenCoords(self.grid_row, self.grid_col)
@@ -82,7 +88,7 @@ function Entity:draw()
     -- love.graphics.rectangle("fill", self.act_x, self.act_y, Globals.TILE_SIZE, Globals.TILE_SIZE)
     -- love.graphics.setColor(1, 1, 1, 1)
 
-    love.graphics.draw(Globals.TILE_SHEET.tilesetImage, Globals.TILE_SHEET:fetch_quad(460), self.act_x, self.act_y, 0, Globals.TILE_SCALE_X, Globals.TILE_SCALE_Y)
+    love.graphics.draw(Globals.TILE_SHEET.tilesetImage, Globals.TILE_SHEET:fetch_quad(1), self.act_x, self.act_y, 0, Globals.TILE_SCALE_X, Globals.TILE_SCALE_Y)
 
 end
 

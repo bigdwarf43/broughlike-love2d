@@ -4,18 +4,19 @@ Globals = {
     WORLD_SIZE_ROW=5,
     WORLD_SIZE_COL=5,
     WORLD_ARRAY = {},
-    CURRENT_ROW = nil,
-    CURRENT_COL = nil,
+    CURRENT_ROW = nil, -- current room row on world grid
+    CURRENT_COL = nil, -- current room col on world grid
 
     -- MAP 
-    MAP_ROW = 11,
-    MAP_COL = 11,
+    MAP_ROW = 11, -- number of rows a map can have
+    MAP_COL = 11, -- number of cols a map can have
 
     TILE_SIZE = 16,
-    TILE_OFFSET = 1.3,
+    TILE_OFFSET =1,
     TILE_SCALE_X =1,
     TILE_SCALE_Y =1,
 
+    WALL_OFFSET =2, 
 
     GRID_DIRECTIONS_MAP = {
         up    = { row =  -1, col = 0},
@@ -23,9 +24,14 @@ Globals = {
         left  = { row = 0, col =  -1},
         right = { row =  0, col =  1}
     },
+    
+    --fonts
+    SMALL_FONT = love.graphics.newFont("assests/fonts/m5x7.ttf"),
 
-    TILE_SHEET = tile_sheet:new("assests/1bitpack_kenney_1.2/Tilesheet/colored-transparent_packed.png", 16, 16)
+    TILE_SHEET_CHARACTER = tile_sheet:new("assests/kenney_tiny-dungeon/Tilemap/tilemap_packed.png", 16, 16),
+    TILE_SHEET_ENVIRONMENT = tile_sheet:new("assests/consolidated_sprite_sheets/environment.png",16,16),
 
+    DEBUG =false
 }
 
 return Globals

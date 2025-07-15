@@ -7,10 +7,31 @@ function COMMON_UTILS:Lerp(start, dest, t)
 end
 
 function COMMON_UTILS:fetchScreenCoords(row, col)
-    local x_coord = (col-1) * Globals.TILE_SIZE * Globals.TILE_OFFSET
-    local y_coord =  (row-1)* Globals.TILE_SIZE * Globals.TILE_OFFSET
+    local x_coord = (col-1) * Globals.TILE_SIZE * Globals.TILE_SCALE_X * Globals.TILE_OFFSET
+    local y_coord =  (row-1)* Globals.TILE_SIZE * Globals.TILE_SCALE_Y * Globals.TILE_OFFSET
 
     return x_coord, y_coord
+end
+
+function COMMON_UTILS:get_cardinal_direction(from_tile, to_tile)
+    local delta_row = to_tile.row - from_tile.row
+    local delta_col = to_tile.col - from_tile.col
+
+    if math.abs(delta_row) > math.abs(delta_col) then
+        -- Vertical movement dominates
+        if delta_row > 0 then
+            return "down"
+        elseif delta_row < 0 then
+            return "up"
+        end
+    else
+        -- Horizontal movement dominates or equal
+        if delta_col > 0 then
+            return "right"
+        elseif delta_col < 0 then
+            return "left"
+        end
+    end
 end
 
 function COMMON_UTILS:Astar(start, goal, graph)

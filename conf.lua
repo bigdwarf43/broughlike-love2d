@@ -1,12 +1,7 @@
--- function love.conf(t)
---     -- t.window.width = 640
---     -- t.window.height = 960
---     -- t.window.fullscreen = false
---     -- t.window.usedpiscale = false
---     -- t.window.resizable = false
---     t.window.msaa = 0
---     t.window.resizable = false
---     t.window.fullscreen = true
---     t.window.highdpi = true
---     t.window.usedpiscale = false 
--- end
+function love.conf(t)
+    t.console = true
+    t.window.height, t.window.width = t.window.width, t.window.height
+    -- t.window.fullscreen = false         -- Enable fullscreen (boolean)
+    -- t.window.borderless = false
+    -- -- t.window.fullscreentype = "desktop" 
+end

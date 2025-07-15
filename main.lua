@@ -4,33 +4,51 @@ World_map = require "components.world_map"
 Player = require "components.player"
 Push = require "lib.push"
 Events = require "components.events"
+ShaderManager = require("components.graphics_handlers.shader_manager")
+
 
 --temp
 Tank_enemy =  require "components.entities.tank_enemy"
 
 WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
-VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 240, 426
+VIRTUAL_WIDTH, VIRTUAL_HEIGHT = 177, 320
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
+    fullscreen = false
     -- Resolution config
-    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT,
-        { resizable = false, fullscreen = false, highdpi = true, usedpiscale = false })
-    Push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT,
-        { fullscreen = false, vsync = true, resizable = true, usedpiscale = false, upscale = "pixel-perfect", canvas = true, highdpi = true })
+    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {
+        resizable = true,
+        highdpi = true,
+        usedpiscale = false
+    })
+    Push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
+        resizable = true,
+        fullscreen = true,
+        vsync = true,
+        usedpiscale = false,
+        upscale = "pixel-perfect",
+        highdpi = true
+    })
 
         
     math.randomseed(os.time()) -- seed the RNG
 
+    ShaderManager:load()    
+
+
     World_map_obj = World_map:new()
     MAP_OBJECT = World_map_obj:fetchInitMap()
     local row, col = MAP_OBJECT:findRandomEmptyPosition()
+    player_init_tile = MAP_OBJECT:FetchTile(row, col)
     PLAYER_ENTITY = Player:new{
         grid_row = row,
         grid_col = col,
-        speed = 30
+        speed = 30,
+        tile = player_init_tile
     }
+    player_init_tile.entity =  PLAYER_ENTITY
 
     --FOR TOUCH CONTROLS
     TOUCH_BEGIN_X = nil
@@ -42,8 +60,12 @@ function love.load()
 
 
     -- -- temp
-    -- Tank_enemy_obj = Tank_enemy:new() 
-    -- Tank_enemy_obj:update()
+    -- print("TILES IN RADIUS")
+    -- tiles = MAP_OBJECT:fetchRadius(10, 2, 2)
+    -- for i, tile in ipairs(tiles) do
+    --     print(tile.row, tile.col)
+    -- end
+
 end
 
 function love.resize(w, h)
@@ -80,16 +102,20 @@ end
 function love.keypressed(key)
     PLAYER_ENTITY:HandleKeyPressed(MAP_OBJECT, key)
 
-    if key=="r" then
-        LoadNewMap()
+    if key=="escape" then
+        love.event.quit()
     end
+    if key == "f11" then
+		fullscreen = not fullscreen
+		love.window.setFullscreen(fullscreen, "desktop")
+	end
 end
 
 -- every tick is a player move
 Events.tick:connect(function()
     print("MOVING ENEMIES")
     for _, monster in ipairs(MAP_OBJECT.monsters_arr) do
-        monster:MoveEntity(MAP_OBJECT)
+        monster:handleTick(MAP_OBJECT)
     end
 end)
 
@@ -104,6 +130,7 @@ function love.update(dt)
 end
 
 function love.draw()
+
     Push:start()
 
     -- ------------------------
@@ -111,13 +138,15 @@ function love.draw()
     -- ------------------------
     love.graphics.push()
 
-    local game_map_x = (VIRTUAL_WIDTH / 2) - (Globals.TILE_SIZE * 7)
-    local game_map_y = (VIRTUAL_HEIGHT / 2) - (Globals.TILE_SIZE * 6)
+    local game_map_x = 0
+    local game_map_y = (VIRTUAL_HEIGHT / 2) - (Globals.TILE_SIZE * 3)
 
     love.graphics.translate(
         game_map_x,
         game_map_y
     )
+
+    love.graphics.print(PLAYER_ENTITY.hp)
     MAP_OBJECT:draw()
     PLAYER_ENTITY:draw()
 
@@ -144,7 +173,7 @@ function love.draw()
     local minimapBorderHeight = game_map_y - minimapY
 
     -- Add a small buffer if you want some space between minimap and game map
-    local buffer_space = 5
+    local buffer_space = 0
     minimapBorderHeight = minimapBorderHeight - buffer_space
 
     -- Ensure minimapBorderHeight is not negative
@@ -158,12 +187,11 @@ function love.draw()
     -- Draw actual minimap tiles inside that border
 
     love.graphics.push()
-
     love.graphics.translate(minimapX, minimapY)
     World_map_obj:drawMinimap(minimapTileSize, tileSpacing)
     love.graphics.pop()
     
-    love.graphics.rectangle("line", 0 , 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
+    -- love.graphics.rectangle("line", 0 , 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 
     Push:finish()
 end

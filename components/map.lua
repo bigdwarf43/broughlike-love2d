@@ -2,8 +2,6 @@
 Border_tile = require "components.tiles.border_tile"
 Floor_tile = require "components.tiles.floor_tile"
 Exit_tile = require "components.tiles.exit_tile"
-
-
 Globals = require "globals"
 
 --enemies
@@ -195,6 +193,14 @@ function Map:inBounds(row, col)
     return false
 end
 
+function Map:inPlayableBounds(row, col)
+    -- 1 is filled with border and also width column and height row
+    if 1 < row and row < self.height and 1 < col and col < self.width then
+        return true
+    end
+    return false
+end
+
 function Map:fetchPLayerPositionFromExit(exit_dir)
     -- fetches position where the player should be placed depending upon the direction of the exit 
     -- that the player took in the last room
@@ -210,35 +216,97 @@ function Map:fetchPLayerPositionFromExit(exit_dir)
 end
 
 
-function Map:TestMap(player_current_grid_x, player_current_grid_y, dir_row, dir_col)
+function Map:TestMap(current_row, current_col, dir_row, dir_col)
     -- check bounds of the map
-    if self:inBounds(player_current_grid_x + dir_row, player_current_grid_y + dir_col) then
+    if self:inBounds(current_row + dir_row, current_col + dir_col) then
         -- check if the tile on the grid is passable
-        local tile = self.level_map[player_current_grid_x][player_current_grid_y]
+        local tile = self.level_map[current_row][current_col]
         return tile:isMoveAllowed(dir_row, dir_col)
     end
 
     return false
 end
 
-
 function Map:FetchTile(row, col)
     return self.level_map[row][col]
+end
+
+
+function Map:fetchRadius(start_row, start_col, radius)
+    local tiles_in_radius = {} -- Table to store the tiles found within the radius
+
+    -- Iterate through rows within the radius
+    for r = start_row - radius, start_row + radius do
+        -- Iterate through columns within the radius
+        for c = start_col - radius, start_col + radius do
+            -- Check if the current (r, c) coordinates are within the map bounds
+            if self:inPlayableBounds(r, c) then
+                -- Check if the tile is within the actual square radius.
+                -- For a circular radius, you would calculate Euclidean distance:
+                -- local dist = math.sqrt((r - start_row)^2 + (c - start_col)^2)
+                -- if dist <= radius then ... end
+                -- For this example, we're using a square area defined by the radius.
+                
+                -- Fetch the tile using the existing FetchTile function
+                local tile = self:FetchTile(r, c)
+                
+                -- Add the fetched tile to our results table
+                table.insert(tiles_in_radius, tile)
+            end
+        end
+    end
+
+    return tiles_in_radius -- Return the table of tiles
 end
 
 function Map:GenerateMonsters()
     for _ = 1, self.num_of_enemies do
         local row, col = self:findRandomEmptyPosition()
-        local enemy = Tank_enemy:new(row, col)
+
+        local tile = self:FetchTile(row, col)
+        local enemy = Tank_enemy:new(row, col, tile)
+        
+        -- set the enemy on tile
+        self.level_map[row][col].entity = enemy
+
         table.insert(self.monsters_arr, enemy)
     end
 end
+
+function Map:RemoveEnemy(monster)
+    print('INSDIDE REMOVE ENEMY') 
+    print(monster)
+    local foundIndex = -1
+    for i, m in ipairs(self.monsters_arr) do
+        if m == monster then -- Compare by reference (checks if it's the exact same object)
+            foundIndex = i
+            break
+        end
+    end
+
+    if foundIndex ~= -1 then
+        table.remove(self.monsters_arr, foundIndex)
+        print("Monster removed successfully from index:", foundIndex)
+    else
+        print("Error: Monster not found in the array.")
+    end
+end
+
+
 
 function Map:draw()
     -- self:printMap()
     for row=1, #self.level_map do
 		for col=1, #self.level_map[row] do
             self.level_map[row][col]:draw(self.level_map)
+		end
+	end
+    for row=1, #self.level_map do
+		for col=1, #self.level_map[row] do
+            if getmetatable(self.level_map[row][col]) == Floor_tile then
+                self.level_map[row][col]:draw_walls(self.level_map)
+                
+            end
 		end
 	end
 end
