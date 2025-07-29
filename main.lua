@@ -5,7 +5,7 @@ Player = require "components.player"
 Push = require "lib.push"
 Events = require "components.events"
 ShaderManager = require("components.graphics_handlers.shader_manager")
-
+UiManager = require("components.ui_handler.health_ui_container")
 
 --temp
 Tank_enemy =  require "components.entities.tank_enemy"
@@ -35,7 +35,6 @@ function love.load()
         
     math.randomseed(os.time()) -- seed the RNG
 
-    ShaderManager:load()    
 
 
     World_map_obj = World_map:new()
@@ -65,6 +64,8 @@ function love.load()
     -- for i, tile in ipairs(tiles) do
     --     print(tile.row, tile.col)
     -- end
+
+
 
 end
 
@@ -146,7 +147,9 @@ function love.draw()
         game_map_y
     )
 
+    love.graphics.setFont(Globals.SMALL_FONT)
     love.graphics.print(PLAYER_ENTITY.hp)
+
     MAP_OBJECT:draw()
     PLAYER_ENTITY:draw()
 
@@ -162,34 +165,37 @@ function love.draw()
     --------------------------
 
     -- Define minimap tile size and spacing explicitly
-    local minimapTileSize = Globals.TILE_SIZE -- Or a scaled down version
+    local minimapTileSize = 10 -- Or a scaled down version
     local tileSpacing = (Globals.TILE_SIZE * Globals.TILE_OFFSET) - minimapTileSize -- Or just Globals.TILE_OFFSET if it represents the gap directly
 
     -- Corrected minimapWidth and minimapHeight
-    local minimapWidth = (Globals.MAP_COL * minimapTileSize) + (math.max(0, Globals.MAP_COL - 1) * tileSpacing)
+    local ui_conatiner_width = (Globals.MAP_COL * minimapTileSize) + (math.max(0, Globals.MAP_COL - 1) * tileSpacing)
 
     local minimapX = game_map_x
     local minimapY = 0
-    local minimapBorderHeight = game_map_y - minimapY
+    local ui_conatiner_height = game_map_y - minimapY
 
     -- Add a small buffer if you want some space between minimap and game map
-    local buffer_space = 0
-    minimapBorderHeight = minimapBorderHeight - buffer_space
+    local buffer_space = 20
+    ui_conatiner_height = ui_conatiner_height - buffer_space
 
-    -- Ensure minimapBorderHeight is not negative
-    minimapBorderHeight = math.max(0, minimapBorderHeight)
+    -- Ensure ui_conatiner_height is not negative
+    ui_conatiner_height = math.max(0, ui_conatiner_height)
 
     -- Minimap border
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setLineWidth(1.5)
-    love.graphics.rectangle("line", minimapX, minimapY, minimapWidth, minimapBorderHeight)
+    love.graphics.rectangle("line", minimapX, minimapY, ui_conatiner_width, ui_conatiner_height)
 
     -- Draw actual minimap tiles inside that border
-
     love.graphics.push()
     love.graphics.translate(minimapX, minimapY)
     World_map_obj:drawMinimap(minimapTileSize, tileSpacing)
     love.graphics.pop()
+
+    -- drawing health
+    love.graphics.translate(ui_conatiner_width/2, 20)
+    UiManager:draw_health(PLAYER_ENTITY.hp)
     
     -- love.graphics.rectangle("line", 0 , 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 

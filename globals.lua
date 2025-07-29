@@ -26,7 +26,7 @@ Globals = {
     },
     
     --fonts
-    SMALL_FONT = love.graphics.newFont("assests/fonts/m5x7.ttf"),
+    SMALL_FONT = love.graphics.newFont(10, "mono"),
 
     TILE_SHEET_CHARACTER = tile_sheet:new("assests/kenney_tiny-dungeon/Tilemap/tilemap_packed.png", 16, 16),
     TILE_SHEET_ENVIRONMENT = tile_sheet:new("assests/consolidated_sprite_sheets/environment.png",16,16),
